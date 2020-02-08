@@ -1,0 +1,18 @@
+version: '3'
+
+services:  
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+      - "27018:27018"
+    volumes:
+      - ./.data/mongodb:/data/db
+    command: mongod --bind_ip_all
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+      - "7373:7373"
+    volumes:
+      - ./.data/redis:/data/cache
