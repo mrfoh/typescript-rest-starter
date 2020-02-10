@@ -25,6 +25,7 @@ export function validate(options: ValidationOptions) {
             .catch(error => {
                 res.status(HttpStatus.VALIDATION_ERROR);
                 res.json({
+                    type: 'ValidationError',
                     message: 'There were errors in your request',
                     errors: formatError(error)
                 });

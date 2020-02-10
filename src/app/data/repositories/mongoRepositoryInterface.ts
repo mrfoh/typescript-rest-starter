@@ -1,4 +1,7 @@
+import { IMongoModel } from '../models/mongoModel';
+
 export interface QueryOptions {
+    archived: boolean | string | false;
     conditions: any;
     select?: any;
     populate?: [{
@@ -28,7 +31,7 @@ export interface PaginationOptions {
     page: number;
 }
 
-export interface IMongoRepositoryInterface<T> {
+export interface IMongoRepositoryInterface<T extends IMongoModel> {
     all(options: QueryOptions): Promise<T[] | PaginatedResult<T>>;
     create(attributes: any): Promise<T>;
     getOneById(id: string): Promise<T>;
@@ -36,4 +39,5 @@ export interface IMongoRepositoryInterface<T> {
     update(id: string, attrs: any): Promise<T>;
     archive(id: string): Promise<T>;
     delete(id: string): Promise<T>;
+    restore(id: string): Promise<T>;
 }

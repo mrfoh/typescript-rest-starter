@@ -1,26 +1,28 @@
 import { injectable, unmanaged } from 'inversify';
-import { Document, Model, model, Query } from 'mongoose';
-import { MongoModel } from '../models/mongoModel';
+import { Model, model, Query } from 'mongoose';
+import { MongoModel, IMongoModel } from '../models/mongoModel';
 import { IMongoRepositoryInterface, PaginatedResult, QueryOptions, PaginationOptions } from './mongoRepositoryInterface';
-import { ModelNotFoundError } from './mongoRepositoryErrors';
-import mongooseSoftDeletes from '../plugins/mongooseSoftDelete';
+import { ModelNotFoundError, SoftDeleteNotSupportedError } from './mongoRepositoryErrors';
 const mongooseHidden = require('mongoose-hidden')();
 
 
 @injectable()
-export abstract class MongoRepository<T extends Document> implements IMongoRepositoryInterface<T> {
+export abstract class MongoRepository<T extends IMongoModel> implements IMongoRepositoryInterface<T> {
     private name: string;
     private model: Model<T>;
+    private schema: MongoModel;
 
     constructor(
         @unmanaged() name: string,
         @unmanaged() schema: MongoModel
     ) {
+        this.schema = schema;
+        this.schema
+            .set('toJSON', { virtuals: true, getters: true })
+            .plugin(mongooseHidden);
+
         this.name = name;
         this.model = model<T>(this.name, schema);
-
-        schema.plugin(mongooseSoftDeletes);
-        schema.plugin(mongooseHidden);
     }
     /**
      * Archive a model
@@ -28,8 +30,21 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
      */
     async archive(id: string) {
         try {
-            const model = await this.getOneById(id);
-            return await model['softDelete']();
+            const model = await this.model.findOne().where('_id', id);
+            const supportsSoftDeletes = this.schema.options!.softDeletes;
+
+            if (!model) {
+                throw new ModelNotFoundError(`${this.name} not found`);
+            }
+
+            if (!supportsSoftDeletes) {
+                throw new SoftDeleteNotSupportedError(`${this.name} does not support soft deletes. Use the delete method instead`);
+            }
+
+            model.deleted = true;
+            model.deletedAt = new Date();
+
+            return await model.save();
         } catch (error) {
             throw error;
         }
@@ -42,6 +57,7 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
     async all(options: QueryOptions): Promise<T[] | PaginatedResult<T>> {
         try {
             const {
+                archived,
                 conditions,
                 select,
                 sortBy = 'createdAt',
@@ -50,6 +66,9 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
                 perPage = 20,
                 page = 1
             } = options;
+            conditions.deletedAt = archived === true || archived === 'true'
+                ? { $ne: null }
+                : { $eq: null };
             const total = await this.model.countDocuments(conditions);
             const query = this.model.find(conditions);
 
@@ -106,7 +125,7 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
     async getOneById(id: string): Promise<T> {
         try {
             const model = await this.model.findOne().where('_id', id).exec();
-            if (!model) throw new ModelNotFoundError(`${this.name} not found`);
+            if (!model || model && model.deleted) throw new ModelNotFoundError(`${this.name} not found`);
             return model;
         } catch (error) {
             throw error;
@@ -134,7 +153,7 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
      */
     async update(id: string, attrs: any): Promise<T> {
         try {
-            const model = await this.model.updateOne({ _id: id }, attrs, { new: true });
+            const model = await this.model.findByIdAndUpdate(id, attrs, { new: true });
             if (!model) throw new ModelNotFoundError(`${this.name} not found`);
             return model;
         } catch (error) {
@@ -166,6 +185,26 @@ export abstract class MongoRepository<T extends Document> implements IMongoRepos
                 },
                 data: docs
             };
+        } catch (error) {
+            throw error;
+        }
+    }
+    /**
+     * Restored an archived model
+     * @param {string} id
+     * @returns {Promise<T>}
+     */
+    async restore(id: string): Promise<T> {
+        try {
+            const model = await this.getOneById(id);
+
+            if (model && !model.deleted || !model.deletedAt) {
+               return model;
+            } else {
+                model!.deletedAt = null;
+                model.deleted = false;
+                return await model.save();
+            }
         } catch (error) {
             throw error;
         }

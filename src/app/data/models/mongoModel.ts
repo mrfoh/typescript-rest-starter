@@ -6,36 +6,42 @@ export interface MongoModelOptions extends SchemaOptions {
     /**
      * Use UUID is primary key
      */
-    useUUID?: boolean | false;
+    useUUID: boolean | true;
     /**
-     * Fields to hidde
+     * Allow soft deletes
      */
-    hidden?: string[];
+    softDeletes: boolean | true;
 }
 
 export interface IMongoModel extends Document {
     createdAt: Date;
     updatedAt: Date;
-    deletedAt?: Date;
-    deleted?: boolean;
+    deletedAt?: Date | null;
+    deleted?: boolean | false;
 }
 
 export class MongoModel extends Schema {
+    options?: MongoModelOptions;
     /**
      * Base Schema
      * @param {SchemaDefinition} definition
      * @param {BaseSchemaOptions} options
      */
     constructor(definition?: SchemaDefinition, options?: MongoModelOptions) {
-        const defaultSchemaOptions: MongoModelOptions = {
+        const defaultSchemaOptions: SchemaOptions = {
             timestamps: {
                 createdAt: 'createdAt',
                 updatedAt: 'updatedAt'
-            }
+            },
+            id: true
         };
 
-        const defaultDefinition: SchemaDefinition = {
+        const defaultDefinition = {
             ...options!.useUUID && { _id: COMMON_SCHEMAS.PRIMARY_ID },
+            ...options!.softDeletes && {
+                deleted: false,
+                deletedAt: SchemaTypes.Date
+            },
             createdAt: SchemaTypes.Date,
             updatedAt: SchemaTypes.Date
         };
@@ -45,11 +51,10 @@ export class MongoModel extends Schema {
             merge(options || {}, defaultSchemaOptions)
         );
 
-        this.set('toJSON', { virtuals: true });
-        this.set('toObject', { virtuals: true });
+        this.options = options;
     }
 
-    private getHiddenFields() {
+    getHiddenFields() {
         const hidden: any = {};
         const fields = this.get('hidden');
         if (fields) {

@@ -1,4 +1,4 @@
-import { controller, interfaces, httpPost, request, response, httpGet } from 'inversify-express-utils';
+import { controller, interfaces, httpPost, request, response, httpGet, httpPut, httpDelete } from 'inversify-express-utils';
 import { inject } from 'inversify';
 import SERVICES from '../services/services';
 import { BaseController } from './controller';
@@ -40,6 +40,32 @@ export default class CharacterController extends BaseController implements inter
         }
     }
 
+    @httpPut('/:id')
+    async updateCharacter(
+        @request() req: Request,
+        @response() res: Response
+    ) {
+        try {
+            const character = await this.characterService.updateCharacter(req);
+            res.json(character);
+        } catch (error) {
+            this.handleError(error, res);
+        }
+    }
+
+    @httpPost('/:id/restore')
+    async restoreCharacter(
+        @request() req: Request,
+        @response() res: Response
+    ) {
+        try {
+            const character = await this.characterService.restoreCharacter(req);
+            res.json(character);
+        } catch (error) {
+            this.handleError(error, res);
+        }
+    }
+
     @httpPost('/', validate({ schema: newCharacterSchema }))
     async createCharacter(
         @request() req: Request,
@@ -47,6 +73,19 @@ export default class CharacterController extends BaseController implements inter
     ) {
         try {
             const character = await this.characterService.addCharacter(req);
+            res.json(character);
+        } catch (error) {
+            this.handleError(error, res);
+        }
+    }
+
+    @httpDelete('/:id')
+    async deleteCharacter(
+        @request() req: Request,
+        @response() res: Response
+    ) {
+        try {
+            const character = await this.characterService.deleteCharacter(req);
             res.json(character);
         } catch (error) {
             this.handleError(error, res);

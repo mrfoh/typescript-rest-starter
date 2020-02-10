@@ -26,6 +26,7 @@ export default class CharacterService {
     async all(req: Request) {
         try {
             const {
+                archived = false,
                 perPage = 20,
                 page = 1,
                 sortBy = 'createdAt',
@@ -33,6 +34,7 @@ export default class CharacterService {
             } = req.query;
 
             const query = {
+                archived,
                 conditions: {},
                 sortBy,
                 sortOrder,
@@ -49,6 +51,37 @@ export default class CharacterService {
     async getCharacter(req: Request) {
         try {
             const character = await this.characterRepository.getOneById(req.params.id);
+            return character;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateCharacter(req: Request) {
+        try {
+            const { id } = req.params;
+            const attrs = req.body;
+            const character = await this.characterRepository.update(id, attrs);
+            return character;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteCharacter(req: Request) {
+        try {
+            const { id } = req.params;
+            const character = await this.characterRepository.archive(id);
+            return character;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async restoreCharacter(req: Request) {
+        try {
+            const { id } = req.params;
+            const character = await this.characterRepository.restore(id);
             return character;
         } catch (error) {
             throw error;

@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import IDENTIFIERS from '../identifiers';
 import { Logger } from 'pino';
 import { Response } from 'express';
-import { ModelNotFoundError } from '../data/repositories/mongoRepositoryErrors';
+import { HttpStatus } from '../constants';
 
 @injectable()
 export class BaseController {
@@ -13,29 +13,25 @@ export class BaseController {
         let status: number;
         let message: string;
         let errors: any[];
+        let type: string;
 
         message = error.message;
         errors = <any>error['errors'];
-
-        if (error instanceof ModelNotFoundError) {
-            status = 404;
-        } else {
-            status = errors
-                ? 422
-                : 400;
-        }
+        status = error['statusCode'] || HttpStatus.BAD_REQUEST;
+        type = error['type'] || 'BadRequestError';
 
         return {
             status,
             message,
-            errors
+            errors,
+            type
         };
     }
 
     handleError(error: Error, res: Response) {
-        this.logger.error(error);
-        const { message, status, errors } = this.parseError(error);
+        this.logger.error(error.message, error);
+        const { message, status, errors, type } = this.parseError(error);
         res.status(status);
-        res.json({ message, ...errors && { errors } });
+        res.json({ type, message, ...errors && { errors } });
     }
 }
