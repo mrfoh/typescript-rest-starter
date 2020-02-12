@@ -1,5 +1,6 @@
 const IDENTIFIERS = {
-    LOGGER: Symbol('Logger')
+    LOGGER: Symbol('Logger'),
+    EMITTER: Symbol('Emitter')
 };
 
 export default IDENTIFIERS;

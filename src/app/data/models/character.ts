@@ -26,5 +26,6 @@ export const CharacterSchema = new MongoModel({
     dateOfDeath: Date
 }, {
     useUUID: true,
-    softDeletes: true
+    softDeletes: true,
+    hidden: []
 });

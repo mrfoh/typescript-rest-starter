@@ -7,6 +7,7 @@ import { validate } from '../middlewares/validation';
 import { fetchAllSchema, fetchOneSchema } from '../requestValidation/common';
 import { newCharacterSchema } from '../requestValidation/characterValidation';
 import CharacterService from '../services/characterService';
+import authentication from '../middlewares/authentication';
 
 
 @controller('/characters')
@@ -14,7 +15,7 @@ export default class CharacterController extends BaseController implements inter
     @inject(SERVICES.CHARACTER_SERVICE)
     private characterService!: CharacterService;
 
-    @httpGet('/', validate({ schema: fetchAllSchema }))
+    @httpGet('/', authentication(), validate({ schema: fetchAllSchema }))
     async getCharacters(
         @request() req: Request,
         @response() res: Response

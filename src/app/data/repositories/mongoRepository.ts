@@ -3,8 +3,6 @@ import { Model, model, Query } from 'mongoose';
 import { MongoModel, IMongoModel } from '../models/mongoModel';
 import { IMongoRepositoryInterface, PaginatedResult, QueryOptions, PaginationOptions } from './mongoRepositoryInterface';
 import { ModelNotFoundError, SoftDeleteNotSupportedError } from './mongoRepositoryErrors';
-const mongooseHidden = require('mongoose-hidden')();
-
 
 @injectable()
 export abstract class MongoRepository<T extends IMongoModel> implements IMongoRepositoryInterface<T> {
@@ -17,9 +15,24 @@ export abstract class MongoRepository<T extends IMongoModel> implements IMongoRe
         @unmanaged() schema: MongoModel
     ) {
         this.schema = schema;
-        this.schema
-            .set('toJSON', { virtuals: true, getters: true })
-            .plugin(mongooseHidden);
+        const schemaOptions = this.schema.options;
+        this.schema.set('toJSON', {
+            virtuals: true,
+            getters: true,
+            transform: function (_doc, ret, _options) {
+                // Remove hidden fields from converted pojo
+                const hiddenFields = schemaOptions?.hidden || [];
+                if (hiddenFields.length > 0) {
+                    for (let i = 0; i < hiddenFields.length; i++) {
+                        delete ret[hiddenFields[i]];
+                    }
+                }
+
+                delete ret._id;
+
+                return ret;
+              }
+        });
 
         this.name = name;
         this.model = model<T>(this.name, schema);

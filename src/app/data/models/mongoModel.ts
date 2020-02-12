@@ -11,6 +11,7 @@ export interface MongoModelOptions extends SchemaOptions {
      * Allow soft deletes
      */
     softDeletes: boolean | true;
+    hidden: string[] | [];
 }
 
 export interface IMongoModel extends Document {
@@ -52,14 +53,5 @@ export class MongoModel extends Schema {
         );
 
         this.options = options;
-    }
-
-    getHiddenFields() {
-        const hidden: any = {};
-        const fields = this.get('hidden');
-        if (fields) {
-            fields.forEach((field: string) => hidden[field] = true);
-        }
-        return hidden;
     }
 }
