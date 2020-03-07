@@ -22,13 +22,10 @@ export default class AuthController extends BaseController implements interfaces
                 password
             } = req.body;
 
-            const { account, token} = await this.accountService
+            const token = await this.accountService
                 .authenticateUserByEmailPassword({ email, password });
 
-            res.json({
-                account,
-                token
-            });
+            res.json({ token });
         } catch (error) {
             this.handleError(error, res);
         }

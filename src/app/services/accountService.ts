@@ -29,24 +29,24 @@ export default class AccountService  {
      * @returns {string}
      */
     private makeJWT(account: IAccount): string {
-        const { email, id } = account;
+        const { email, id, firstName, lastName, phoneNumber } = account;
         const secret = config.SECRET_KEY;
         const expiresIn = config.JWT_TTL;
 
-        return sign({ email }, secret, {
+        return sign({ email, firstName, lastName, phoneNumber }, secret, {
             audience: id,
             expiresIn,
-           subject: 'myclient'
+            subject: 'myclient'
         });
     }
     /**
      * Authenticate user using email and password
      * @param {EmailPasswordTuple} param
-     * @returns {Promise<any>}
+     * @returns {Promise<string | null>}
      */
-    async authenticateUserByEmailPassword(param: EmailPasswordTuple): Promise<any> {
+    async authenticateUserByEmailPassword(param: EmailPasswordTuple): Promise<string | null> {
         try {
-            let token = '';
+            let token: string | null = null;
             const { email, password } = param;
             const account = await this.accountRepository.getOneByField('email', email);
             if (!account) {
@@ -67,10 +67,7 @@ export default class AccountService  {
                 throw error;
             }
 
-            return {
-                account,
-                token
-            };
+            return token;
         } catch (error) {
             throw error;
         }
