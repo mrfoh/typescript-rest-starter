@@ -48,7 +48,7 @@
     "inversify-express-utils": "^6.3.2",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.20.8",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "mongoose": "^5.8.11",
     "mongoose-hidden": "^1.8.1",
     "pino": "^5.16.0",
