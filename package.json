@@ -43,7 +43,7 @@
     "dotenv-expand": "^5.1.0",
     "dotenv-extended": "^2.7.1",
     "dotenv-parse-variables": "^0.2.3",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "inversify": "^5.0.1",
     "inversify-express-utils": "^6.3.2",
     "jsonwebtoken": "^8.5.1",
